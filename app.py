@@ -10,19 +10,18 @@ from datetime import datetime, timezone, timedelta
 import html as _html
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-st.set_page_config(page_title="Breakout Desk · NSE", layout="wide", page_icon="📈")
+st.set_page_config(page_title="Institutional Breakout Terminal · NSE", layout="wide", page_icon="📈")
 
 TOP_N = 5
 IST = timezone(timedelta(hours=5, minutes=30))
 
-# Shared Memory Across All 2-3 Users on the Website (No Auto-Scan)
 @st.cache_resource
 def get_shared_store():
     return {"timestamp": None, "total_scanned": 0, "total_matched": 0, "results": []}
 
 shared_store = get_shared_store()
 
-# ------------------------------------------------------------------ PREMIUM THEME
+# ------------------------------------------------------------------ STYLING & HOVER ANIMATIONS
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap');
@@ -33,13 +32,50 @@ st.markdown("""
 .block-container { max-width:1150px; padding-top:1.2rem; padding-bottom:3rem; }
 #MainMenu, footer { visibility:hidden; }
 
+/* Amazing Hover Title Animation */
+.terminal-main-title {
+  font: 800 clamp(1.8rem, 3.5vw, 2.6rem) 'Fraunces', serif;
+  color: var(--gold2);
+  text-align: center;
+  margin-bottom: 4px;
+  letter-spacing: -0.5px;
+  transition: all 0.4s ease;
+  cursor: default;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+.terminal-main-title:hover {
+  color: #ffffff;
+  text-shadow: 0 0 20px rgba(244, 219, 147, 0.8), 0 0 35px rgba(216, 179, 90, 0.5);
+  transform: scale(1.01);
+}
+
+.terminal-sub {
+  text-align: center;
+  color: var(--mut);
+  font-size: 0.95rem;
+  margin-bottom: 24px;
+  font-weight: 500;
+}
+
 .lbl { font:600 1.05rem 'Fraunces',serif; color:var(--gold2) !important; margin:16px 0 8px; display:flex; align-items:center; gap:12px; }
 .lbl::after { content:""; flex:1; height:1px; background:linear-gradient(90deg,var(--line),transparent); }
+
 [data-testid="stNumberInput"] label p, [data-testid="stTextArea"] label p, [data-testid="stCheckbox"] p, [data-testid="stRadio"] label p, [data-testid="stExpander"] summary p {
   color:var(--ink) !important; font-weight:600 !important; }
-[data-baseweb="input"], [data-baseweb="base-input"], [data-baseweb="textarea"] { background:#041E17 !important; border-radius:10px !important; border:1px solid var(--line) !important; }
-input, textarea { color:#F2EDDA !important; -webkit-text-fill-color:#F2EDDA !important; font-weight:600 !important; }
-[data-testid="stNumberInput"] button { background:#093A2D !important; color:var(--gold2) !important; }
+
+/* FIX: Removing White Background Boxes from Inputs */
+[data-baseweb="input"], [data-baseweb="base-input"], [data-baseweb="textarea"] { 
+  background: rgba(4, 30, 23, 0.9) !important; 
+  border-radius: 10px !important; 
+  border: 1px solid var(--line) !important; 
+}
+input, textarea { 
+  background: transparent !important;
+  color: #F2EDDA !important; 
+  -webkit-text-fill-color: #F2EDDA !important; 
+  font-weight: 600 !important; 
+}
+[data-testid="stNumberInput"] button { background:#093A2D !important; color:var(--gold2) !important; border: none !important; }
 [data-testid="stExpander"] { border:1px solid var(--line) !important; border-radius:12px !important; background:rgba(4,30,23,.75) !important; }
 
 .stButton>button { width:100%; border:0 !important; border-radius:6px 20px 6px 20px; padding:0.9rem;
@@ -79,40 +115,9 @@ input, textarea { color:#F2EDDA !important; -webkit-text-fill-color:#F2EDDA !imp
 </style>
 """, unsafe_allow_html=True)
 
-HERO_HTML = """
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Hanken+Grotesk:wght@400;600&display=swap');
-*{box-sizing:border-box;margin:0;padding:0} body{background:transparent;font-family:'Hanken Grotesk',sans-serif;color:#F2EDDA;overflow:hidden}
-.hero{position:relative;height:210px;padding:22px 24px;overflow:hidden;border:1px solid rgba(216,179,90,.38);border-radius:6px 24px 6px 24px;
- background:linear-gradient(135deg,rgba(8,52,41,.92),rgba(4,26,20,.96))}
-.txt{position:relative;z-index:2;max-width:65%}
-h1{font:800 clamp(22px,3.8vw,36px)/1.08 'Fraunces',serif}
-h1 em{font-style:italic;font-weight:600;color:#F4DB93}
-p{margin-top:8px;font-size:13.5px;line-height:1.45;color:#B9CEC4}
-.facts{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:12px;font-size:12px;font-weight:600;color:#F4DB93}
-.art{position:absolute;right:14px;top:10px;width:36%;height:185px;z-index:1;opacity:.85}
-.art path,.art line{fill:none;stroke-linecap:round;stroke-linejoin:round}
-.tl{stroke:#D8B35A;stroke-width:1.6;stroke-dasharray:6 7}
-.coil{stroke:#F2EDDA;stroke-width:2.2;stroke-dasharray:1;stroke-dashoffset:1;animation:coil 6s ease-in-out infinite}
-.brk{stroke:#7BE3AB;stroke-width:3.2;stroke-dasharray:1;stroke-dashoffset:1;filter:drop-shadow(0 0 6px #7BE3AB);animation:brk 6s ease-in-out infinite}
-@keyframes coil{0%{stroke-dashoffset:1}50%,100%{stroke-dashoffset:0}}
-@keyframes brk{0%,50%{stroke-dashoffset:1}80%,100%{stroke-dashoffset:0}}
-@media(max-width:640px){.txt{max-width:100%}.art{opacity:.18;width:75%}}
-</style>
-<div class="hero">
- <div class="txt">
-  <h1>The quiet before the <em>breakout.</em></h1>
-  <p>100% Real NSE Data · Shared Team Terminal (1 Scan Updates All Devices)</p>
-  <div class="facts"><span>◆ ₹10Cr+ Turnover</span><span>◆ 15D Consolidation</span><span>◆ 20%+ Profit YoY</span><span>◆ FII/DII Buying</span></div>
- </div>
- <svg class="art" viewBox="0 0 420 260" preserveAspectRatio="xMidYMid meet">
-  <line class="tl" x1="20" y1="50" x2="300" y2="110"/><line class="tl" x1="20" y1="210" x2="300" y2="150"/>
-  <path class="coil" pathLength="1" d="M20 130 L55 75 L90 185 L130 90 L170 165 L210 108 L250 148 L295 128"/>
-  <path class="brk" pathLength="1" d="M295 128 L335 58 L355 84 L402 22"/>
- </svg>
-</div>
-"""
-components.html(HERO_HTML, height=225)
+# Amazing Title with Hover Effect
+st.markdown("<div class='terminal-main-title'>⚡ INSTITUTIONAL BREAKOUT TERMINAL ⚡</div>", unsafe_allow_html=True)
+st.markdown("<div class='terminal-sub'>High Turnover (₹10Cr+) &nbsp;|&nbsp; 15D Tight Consolidation (≤20%) &nbsp;|&nbsp; YoY Profit Growth (≥20%) &nbsp;|&nbsp; Smart Money Accumulation</div>", unsafe_allow_html=True)
 
 DEFAULT_STOCKS = (
     "RELIANCE, TCS, HDFCBANK, ICICIBANK, INFY, BHARTIARTL, SBIN, LT, ITC, HINDUNILVR, "
