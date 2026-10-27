@@ -21,7 +21,7 @@ def get_shared_store():
 
 shared_store = get_shared_store()
 
-# ------------------------------------------------------------------ STYLING & HOVER ANIMATIONS
+# ------------------------------------------------------------------ FIXED CSS & ANIMATIONS
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap');
@@ -29,47 +29,50 @@ st.markdown("""
 
 .stApp { background:radial-gradient(1100px 560px at 85% -8%,#0F5A45 0%,transparent 60%),radial-gradient(900px 500px at 0% 100%,#0A4636 0%,transparent 55%),#062A21 !important;
   color:var(--ink) !important; font-family:'Hanken Grotesk',sans-serif; }
-.block-container { max-width:1150px; padding-top:1.2rem; padding-bottom:3rem; }
+.block-container { max-width:1150px; padding-top:2rem; padding-bottom:3rem; }
 #MainMenu, footer { visibility:hidden; }
 
-/* Amazing Hover Title Animation */
+/* Perfect Centered Title with Hover Animation */
 .terminal-main-title {
   font: 800 clamp(1.8rem, 3.5vw, 2.6rem) 'Fraunces', serif;
   color: var(--gold2);
   text-align: center;
-  margin-bottom: 4px;
+  margin-top: 10px;
+  margin-bottom: 6px;
   letter-spacing: -0.5px;
   transition: all 0.4s ease;
   cursor: default;
-  text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  text-shadow: 0 2px 10px rgba(0,0,0,0.4);
 }
 .terminal-main-title:hover {
   color: #ffffff;
-  text-shadow: 0 0 20px rgba(244, 219, 147, 0.8), 0 0 35px rgba(216, 179, 90, 0.5);
-  transform: scale(1.01);
+  text-shadow: 0 0 22px rgba(244, 219, 147, 0.9), 0 0 40px rgba(216, 179, 90, 0.6);
+  transform: scale(1.02);
 }
 
 .terminal-sub {
   text-align: center;
   color: var(--mut);
   font-size: 0.95rem;
-  margin-bottom: 24px;
+  margin-bottom: 28px;
   font-weight: 500;
 }
 
-.lbl { font:600 1.05rem 'Fraunces',serif; color:var(--gold2) !important; margin:16px 0 8px; display:flex; align-items:center; gap:12px; }
+.lbl { font:600 1.05rem 'Fraunces',serif; color:var(--gold2) !important; margin:18px 0 8px; display:flex; align-items:center; gap:12px; }
 .lbl::after { content:""; flex:1; height:1px; background:linear-gradient(90deg,var(--line),transparent); }
 
 [data-testid="stNumberInput"] label p, [data-testid="stTextArea"] label p, [data-testid="stCheckbox"] p, [data-testid="stRadio"] label p, [data-testid="stExpander"] summary p {
   color:var(--ink) !important; font-weight:600 !important; }
 
-/* FIX: Removing White Background Boxes from Inputs */
-[data-baseweb="input"], [data-baseweb="base-input"], [data-baseweb="textarea"] { 
-  background: rgba(4, 30, 23, 0.9) !important; 
-  border-radius: 10px !important; 
-  border: 1px solid var(--line) !important; 
+/* ABSOLUTE FIX: Completely Remove White Background from Inputs */
+div[data-baseweb="input"], div[data-baseweb="base-input"], div[data-testid="stNumberInput"] div, div[data-testid="stNumberInput"] input {
+  background-color: #041E17 !important;
+  background: #041E17 !important;
+  color: #F2EDDA !important;
+  -webkit-text-fill-color: #F2EDDA !important;
+  border-color: var(--line) !important;
 }
-input, textarea { 
+input { 
   background: transparent !important;
   color: #F2EDDA !important; 
   -webkit-text-fill-color: #F2EDDA !important; 
@@ -78,17 +81,38 @@ input, textarea {
 [data-testid="stNumberInput"] button { background:#093A2D !important; color:var(--gold2) !important; border: none !important; }
 [data-testid="stExpander"] { border:1px solid var(--line) !important; border-radius:12px !important; background:rgba(4,30,23,.75) !important; }
 
-.stButton>button { width:100%; border:0 !important; border-radius:6px 20px 6px 20px; padding:0.9rem;
+/* Interactive Glowing Scan Button */
+.stButton>button { width:100%; border:0 !important; border-radius:6px 20px 6px 20px; padding:0.95rem;
   background:linear-gradient(110deg,#B88A2E,#F4DB93 35%,#D8B35A 55%,#B88A2E) !important; background-size:200% 100% !important;
-  animation:foil 6s linear infinite; box-shadow:0 10px 30px rgba(216,179,90,.28); }
-.stButton>button p, .stButton>button span { color:#1B1405 !important; font:800 1.08rem 'Fraunces',serif !important; }
+  animation:foil 5s linear infinite, pulseGlow 3s infinite ease-in-out; box-shadow:0 10px 30px rgba(216,179,90,.3);
+  transition: transform 0.2s ease, box-shadow 0.2s ease; }
+.stButton>button:hover { transform: translateY(-3px); box-shadow: 0 15px 40px rgba(244,219,147,0.6); }
+.stButton>button p, .stButton>button span { color:#1B1405 !important; font:800 1.1rem 'Fraunces',serif !important; }
 
-.rs-head { margin:24px 0 14px; }
+@keyframes pulseGlow {
+  0% { box-shadow: 0 0 15px rgba(216,179,90,0.3); }
+  50% { box-shadow: 0 0 30px rgba(244,219,147,0.7); }
+  100% { box-shadow: 0 0 15px rgba(216,179,90,0.3); }
+}
+
+/* RESULTS CARDS WITH MOUSE HOVER ANIMATION */
+.rs-head { margin:28px 0 16px; }
 .rs-head h2 { font:800 clamp(1.4rem,3.2vw,2.1rem) 'Fraunces',serif; color:var(--gold2) !important; margin:0; }
 .rs-head p { color:var(--mut) !important; margin:4px 0 0; font-size:.9rem; }
-.rc { display:grid; grid-template-columns:60px 1.25fr 2fr 80px; gap:16px; align-items:center; padding:18px 20px; margin-bottom:14px;
-  border:1px solid var(--line); border-radius:6px 20px 6px 20px; background:linear-gradient(135deg,rgba(9,58,45,.92),rgba(4,30,23,.95)); }
+
+.rc { display:grid; grid-template-columns:60px 1.25fr 2fr 80px; gap:16px; align-items:center; padding:20px 22px; margin-bottom:16px;
+  border:1px solid var(--line); border-radius:6px 20px 6px 20px; background:linear-gradient(135deg,rgba(9,58,45,.92),rgba(4,30,23,.95));
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.rc:hover {
+  transform: translateY(-6px) scale(1.01);
+  border-color: var(--gold);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5), 0 0 35px rgba(216,179,90,0.35);
+}
 .rc.first { border:1.5px solid var(--gold); box-shadow:0 12px 34px rgba(216,179,90,.18); }
+.rc.first:hover {
+  box-shadow: 0 22px 55px rgba(0,0,0,0.6), 0 0 45px rgba(244,219,147,0.5);
+}
+
 .rk { font:800 2.8rem/1 'Fraunces',serif; color:var(--gold); text-align:center; }
 .mn h3 { font:700 1.45rem 'Fraunces',serif; margin:0; color:var(--ink) !important; }
 .px { font:700 1.02rem 'Hanken Grotesk',sans-serif; color:var(--gold2) !important; margin:2px 0 10px; }
@@ -96,12 +120,15 @@ input, textarea {
 .gb i { position:absolute; left:0; top:0; bottom:0; width:var(--w); border-radius:9px; background:linear-gradient(90deg,#7A5A1C,var(--gold2)); }
 .gl { display:flex; justify-content:space-between; gap:8px; margin-top:6px; font-size:.75rem; color:var(--mut) !important; }
 .lk { margin-top:10px; display:flex; gap:8px; flex-wrap:wrap; }
-.lk a { color:#1B1405 !important; background:var(--gold2); text-decoration:none !important; font-weight:700; font-size:.78rem; padding:5px 12px; border-radius:4px 10px 4px 10px; }
+.lk a { color:#1B1405 !important; background:var(--gold2); text-decoration:none !important; font-weight:700; font-size:.78rem; padding:5px 12px; border-radius:4px 10px 4px 10px; transition: 0.2s; }
+.lk a:hover { background: #ffffff; transform: translateY(-2px); }
+
 .sts { display:grid; grid-template-columns:repeat(3,1fr); gap:10px 12px; }
 .st span { display:block; font-size:.74rem; color:var(--mut) !important; }
 .st b { font:700 1.1rem 'Fraunces',serif; color:var(--ink) !important; }
 .st b.up { color:var(--up) !important; } .st b.dn { color:var(--dn) !important; }
 .st em { display:block; font-style:normal; font-size:.7rem; color:var(--mut) !important; }
+
 .sr { text-align:center; background:rgba(216,179,90,.1); border:1px solid var(--line); border-radius:12px; padding:10px 6px; }
 .sr b { font:800 1.3rem 'Fraunces',serif; color:var(--gold2) !important; display:block; }
 .sr span { font-size:.7rem; color:var(--mut) !important; }
@@ -115,7 +142,7 @@ input, textarea {
 </style>
 """, unsafe_allow_html=True)
 
-# Amazing Title with Hover Effect
+# Title & Subtitle with proper spacing
 st.markdown("<div class='terminal-main-title'>⚡ INSTITUTIONAL BREAKOUT TERMINAL ⚡</div>", unsafe_allow_html=True)
 st.markdown("<div class='terminal-sub'>High Turnover (₹10Cr+) &nbsp;|&nbsp; 15D Tight Consolidation (≤20%) &nbsp;|&nbsp; YoY Profit Growth (≥20%) &nbsp;|&nbsp; Smart Money Accumulation</div>", unsafe_allow_html=True)
 
