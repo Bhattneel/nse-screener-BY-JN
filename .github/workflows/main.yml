@@ -1,1 +1,14 @@
+name: Keep Streamlit Awake
 
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-only: ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Streamlit App
+        run: curl -I -L https://nse-screener-by-jn-cztxygg99awmkfzbjop2wm.streamlit.app/
