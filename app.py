@@ -6,6 +6,9 @@ import time
 import re
 import csv
 import io
+import json
+import os
+import threading
 from datetime import datetime, timezone, timedelta
 import html as _html
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -14,14 +17,45 @@ st.set_page_config(page_title="Institutional Breakout Terminal · NSE", layout="
 
 TOP_N = 5
 IST = timezone(timedelta(hours=5, minutes=30))
+CACHE_FILE = "shared_scan_backup.json"
+APP_URL = "https://nse-screener-by-jn-cztxygg99awmkfzbjop2wm.streamlit.app/"
+
+# ------------------------------------------------------------------ 24x7 ANTI-SLEEP & SHARED MEMORY
+@st.cache_resource
+def start_keep_alive():
+    def ping_loop():
+        while True:
+            time.sleep(600)  # Har 10 minute me self-ping karega
+            try:
+                requests.get(APP_URL, headers={"User-Agent": "Mozilla/5.0"}, timeout=10)
+            except Exception:
+                pass
+    t = threading.Thread(target=ping_loop, daemon=True)
+    t.start()
+    return True
+
+start_keep_alive()
 
 @st.cache_resource
 def get_shared_store():
+    if os.path.exists(CACHE_FILE):
+        try:
+            with open(CACHE_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
     return {"timestamp": None, "total_scanned": 0, "total_matched": 0, "results": []}
 
 shared_store = get_shared_store()
 
-# ------------------------------------------------------------------ FIXED CSS & ANIMATIONS
+def save_backup(store):
+    try:
+        with open(CACHE_FILE, "w", encoding="utf-8") as f:
+            json.dump(store, f)
+    except Exception:
+        pass
+
+# ------------------------------------------------------------------ FIXED CSS & HOVER ANIMATIONS
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap');
@@ -29,8 +63,8 @@ st.markdown("""
 
 .stApp { background:radial-gradient(1100px 560px at 85% -8%,#0F5A45 0%,transparent 60%),radial-gradient(900px 500px at 0% 100%,#0A4636 0%,transparent 55%),#062A21 !important;
   color:var(--ink) !important; font-family:'Hanken Grotesk',sans-serif; }
-.block-container { max-width:1150px; padding-top:2rem; padding-bottom:3rem; }
-#MainMenu, footer { visibility:hidden; }
+.block-container { max-width:1150px; padding-top:2.2rem; padding-bottom:3rem; }
+#MainMenu, footer, header { visibility:hidden; }
 
 /* Perfect Centered Title with Hover Animation */
 .terminal-main-title {
@@ -64,19 +98,14 @@ st.markdown("""
 [data-testid="stNumberInput"] label p, [data-testid="stTextArea"] label p, [data-testid="stCheckbox"] p, [data-testid="stRadio"] label p, [data-testid="stExpander"] summary p {
   color:var(--ink) !important; font-weight:600 !important; }
 
-/* ABSOLUTE FIX: Completely Remove White Background from Inputs */
-div[data-baseweb="input"], div[data-baseweb="base-input"], div[data-testid="stNumberInput"] div, div[data-testid="stNumberInput"] input {
+/* Remove White Background from Inputs */
+div[data-baseweb="input"], div[data-baseweb="base-input"], div[data-testid="stNumberInput"] div, div[data-testid="stNumberInput"] input, textarea {
   background-color: #041E17 !important;
   background: #041E17 !important;
   color: #F2EDDA !important;
   -webkit-text-fill-color: #F2EDDA !important;
   border-color: var(--line) !important;
-}
-input { 
-  background: transparent !important;
-  color: #F2EDDA !important; 
-  -webkit-text-fill-color: #F2EDDA !important; 
-  font-weight: 600 !important; 
+  font-weight: 600 !important;
 }
 [data-testid="stNumberInput"] button { background:#093A2D !important; color:var(--gold2) !important; border: none !important; }
 [data-testid="stExpander"] { border:1px solid var(--line) !important; border-radius:12px !important; background:rgba(4,30,23,.75) !important; }
@@ -142,7 +171,6 @@ input {
 </style>
 """, unsafe_allow_html=True)
 
-# Title & Subtitle with proper spacing
 st.markdown("<div class='terminal-main-title'>⚡ INSTITUTIONAL BREAKOUT TERMINAL ⚡</div>", unsafe_allow_html=True)
 st.markdown("<div class='terminal-sub'>High Turnover (₹10Cr+) &nbsp;|&nbsp; 15D Tight Consolidation (≤20%) &nbsp;|&nbsp; YoY Profit Growth (≥20%) &nbsp;|&nbsp; Smart Money Accumulation</div>", unsafe_allow_html=True)
 
@@ -191,6 +219,7 @@ min_profit_growth = col2.number_input("Min YoY Profit (%)", value=20.0, step=5.0
 min_turnover_cr = col3.number_input("Min Turnover (₹ Cr)", value=10.0, step=5.0)
 secret_inst_mode = col4.checkbox("🔥 Smart Money Filter", value=True)
 
+# ------------------------------------------------------------------ CORE LOGIC (100% UNCHANGED)
 def get_yahoo_institutional_data(symbol):
     url = f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}.NS?range=3mo&interval=1d"
     try:
@@ -348,6 +377,7 @@ if st.button("🚀 RUN LIVE SCAN (Updates for All Users)", type="primary"):
         shared_store["total_scanned"] = total
         shared_store["total_matched"] = len(final_results)
         shared_store["results"] = final_results[:TOP_N]
+        save_backup(shared_store)
         status.update(label="✅ Scan Complete & Shared Across All Users!", state="complete", expanded=False)
 
 if shared_store["timestamp"] and shared_store["results"]:
